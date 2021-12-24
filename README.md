@@ -19,3 +19,7 @@ Requirements:
 Before you leave for school, start the bot and log in with your Google accunt in the browser window that pops up.
 Disable your screensaver/screen lock so that the desktop stays alive (but prefarably turn your monitor off).
 Once you have the link for the call, tell the bot to join by sending it the `/join` command. Use the other commands from there.
+
+### Before you run it
+Replace the bot token in `bot.py` with your own (ask the [Bot Father](https://t.me/botfather) to make you one).  
+Change your `screen_dims` in `meet.py`.
