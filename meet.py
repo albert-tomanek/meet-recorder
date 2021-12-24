@@ -9,19 +9,13 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import *
 
 import os, time, re
-
-options = webdriver.ChromeOptions()
-options.add_experimental_option("prefs", { "profile.default_content_setting_values.notifications": 1}) # disable notificaitons so that there's no popup
-options.add_argument('--use-fake-device-for-media-stream')
-options.add_argument('--use-file-for-fake-video-capture=albert.mjpeg')
-# options.add_argument('--use-file-for-fake-audio-capture=fake_cam.mjpeg')
-# options.add_argument('--use-fake-ui-for-media-stream')
-options.add_argument('--disable-notifications ')
+import subprocess, signal
 
 options = webdriver.FirefoxOptions()
 options.set_preference("media.navigator.streams.fake", True)
+options.set_preference('media.autoplay.default', 0)
 
-record_rect = {'x': 100, 'y': 100, 'w': 800, 'h': 600}  # Keep this order. It's the order of args for selenium
+screen_dims = (162, 0, 1680, 1050)
 
 class NotAMeetLinkException(Exception):
     pass
@@ -39,10 +33,13 @@ class MeetRecorder:
         self.driver = webdriver.Firefox(firefox_options=options)#webdriver.Chrome(chrome_options=options)
         self.driver.get('https://meet.google.com/')
         input('Log in if your meeting will be private. Then press ENTER.')
-        self.driver.set_window_rect(*list(record_rect.values()))
 
         print('')
         print('Ready to record. You may now leave your computer.')
+
+        time.sleep(5)
+        # self.driver.find_element_by_tag_name('body').send_keys(Keys.F11)
+        self.driver.fullscreen_window()
 
     def __del__(self):
         self.driver.quit()
@@ -66,7 +63,7 @@ class MeetRecorder:
         time.sleep(5)
 
         # Interact with 'Allow Meet to use your camera and microphone' dialog
-        import pdb; pdb.set_trace()
+
         dismiss_button = self._find_elt(
             'span',
             'return arguments[0].innerHTML',
@@ -135,10 +132,14 @@ class MeetRecorder:
         self._click(leave_button)
 
     def start(self, outfile: str):
-        pass
+        cmd = f"gst-launch-1.0 ximagesrc startx={screen_dims[0]} endx={screen_dims[0] + screen_dims[2]} starty={screen_dims[1]} endy={screen_dims[1] + screen_dims[3]} use-damage=0 ! video/x-raw,framerate=30/1 ! videoscale add-borders=false ! video/x-raw,width=640,height=480 ! videoconvert ! theoraenc ! mux. pulsesrc device={self.pa_device_name} ! audioconvert ! queue ! vorbisenc ! mux. oggmux name=mux ! filesink location={outfile}"
+        self.process = subprocess.Popen(
+            cmd.split(),
+            stdin=subprocess.PIPE,
+        )
 
     def stop(self):
-        pass
+        self.process.send_signal(signal.SIGINT)
 
     def _find_elt(self, tag, script, evaluate) -> WebElement:
         # elts = list(self.driver.find_elements_by_tag_name(tag)) # We've got to store a list because more elements may be created while we iterate creating an infinite loop.
