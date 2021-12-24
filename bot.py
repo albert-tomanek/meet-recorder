@@ -3,6 +3,8 @@
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
+from meet import MeetRecorder
+
 from os import system
 import time
 
@@ -12,10 +14,10 @@ updater    = Updater(TOKEN)         # Fetches updates fro Telegram server
 dispatcher = updater.dispatcher     # Filters updates and dispaches callbacks
 
 def join(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(f'Hello {update.effective_user.first_name}')
+    meet.join('https://meet.google.com/jzd-xidq-nme')
 
 def leave(update: Update, context: CallbackContext) -> None:
-    pass
+    meet.leave()
 
 def start(update: Update, context: CallbackContext) -> None:
     pass
@@ -23,12 +25,21 @@ def start(update: Update, context: CallbackContext) -> None:
 def stop(update: Update, context: CallbackContext) -> None:
     pass
 
+def kill(update: Update, context: CallbackContext) -> None:
+    del meet
+
 dispatcher.add_handler(CommandHandler('join', join))
 dispatcher.add_handler(CommandHandler('leave', leave))
 dispatcher.add_handler(CommandHandler('start', start))
 dispatcher.add_handler(CommandHandler('stop', stop))
 
-print('Started bot.')
+dispatcher.add_handler(CommandHandler('kill', kill))
+
+# Initialize bot
+
+meet = MeetRecorder()
+
+print('\nStarted bot.')
 
 updater.start_polling()
 updater.idle()
